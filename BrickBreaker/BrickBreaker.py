@@ -1,6 +1,6 @@
 '''
 Brick Breaker Game
-Autor: Vitoya
+Autor: Vit0y4
 '''
 
 import tkinter as tk
