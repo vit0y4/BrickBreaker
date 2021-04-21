@@ -4,6 +4,7 @@ Autor: Vitoya
 '''
 
 import tkinter as tk
+# Create the canvas and base features
 class PlayComponent(object):
     def __init__(self, canvas, item):
         self.item=item
@@ -18,6 +19,7 @@ class PlayComponent(object):
     def delete(self):
         self.canvas.delete(self.item)
 
+# Create the paddle 
 class Paddle(PlayComponent):
     def __init__(self, canvas, x, y):
         self.height=5
@@ -29,10 +31,7 @@ class Paddle(PlayComponent):
                                      y+self.height/2,
                                      fill='green')
         super(Paddle,self).__init__(canvas,item)
-    
-    def set_ball(self,ball):
-        self.ball=ball
-
+    # Moving paddle
     def move(self, dist):
         coord=self.position()
         width=self.canvas.winfo_width()
@@ -40,7 +39,7 @@ class Paddle(PlayComponent):
             super(Paddle, self).move(dist,0)
             if self.ball is not None:
                 self.ball.move(dist,0)
-
+# Create a brick
 class Brick(PlayComponent):
     colorArray = {1: 'lightsteelblue', 2: 'royalblue', 3: 'blue'}
 
@@ -55,14 +54,14 @@ class Brick(PlayComponent):
                                      y+self.height/2,
                                      fill=color, tag='brick')
         super(Brick, self).__init__(canvas, item)
-
+    # hitting brick
     def hit(self):
         self.hits-=1
         if self.hits==0:
             self.delete()
         else:
             self.canvas.itemconfig(self.item, fill=Brick.colorArray[self.hits])
-
+# Create the Ball
 class Ball(PlayComponent):
     def __init__(self, canvas, x, y):
         self.radius=6
@@ -74,7 +73,10 @@ class Ball(PlayComponent):
                                 y+self.radius,
                                 fill='red')
         super(Ball, self).__init__(canvas,item)
-    
+    # Set the Ball in the canvas
+    def set_ball(self,ball):
+        self.ball=ball
+    # Update ball move direction
     def update(self):
         coord=self.position()
         width=self.canvas.winfo_width()
@@ -85,7 +87,7 @@ class Ball(PlayComponent):
         x=self.direction[0]*self.speed
         y=self.direction[1]*self.speed
         self.move(x,y)
-
+    # Intersect the ball with borders and bricks
     def intersect(self,components):
         coord=self.position()
         x=(coord[0]+coord[2])*0.5
@@ -103,7 +105,7 @@ class Ball(PlayComponent):
         for component in components:
             if isinstance(component,Brick):
                 component.hit()
-
+# Create de Canvas 
 class Game(tk.Frame):
     def __init__(self, master):
         super(Game, self).__init__(master)
@@ -119,15 +121,16 @@ class Game(tk.Frame):
         self.pack()
         self.items = {}
         self.ball=None
+        # Put the paddle at the canvas
         self.paddle = Paddle(self.canvas, self.width/2, 320)
         self.items[self.paddle.item] = self.paddle
-
+        # put the lines of bricks at the canvas
         for x in range(100, self.width-100, 60):
             self.display_brick(x+20,50,2)
             self.display_brick(x+20,70,1)
             self.display_brick(x+20,120,1)
 
-
+        # set move's controls for the paddle (Left and Right arrows)
         self.hud=None
         self.init_game()
         self.canvas.focus_set()
@@ -135,42 +138,44 @@ class Game(tk.Frame):
                          lambda _:self.paddle.move(-30))
         self.canvas.bind('<Right>',
                          lambda _:self.paddle.move(30))
-
+    
+    # call the start_game
     def init_game(self):
         self.update_lives_text()
         self.display_ball()
         self.text=self.draw_text(self.width/2,self.height/2, 'Press "S", for start')
         self.canvas.bind('<s>', lambda _: self.start_game())
-
+    # display the ball
     def display_ball(self):
         if self.ball is not None:
             self.ball.delete()
         paddle_coords = self.paddle.position()
         x= (paddle_coords[0]+paddle_coords[2])*0.5
         self.ball=Ball(self.canvas,x,310)
-        self.paddle.set_ball(self.ball)
-
+        self.ball.set_ball(self.ball)
+    # display a brick
     def display_brick(self, x,y,hits):
         brick=Brick(self.canvas,x,y,hits)
         self.items[brick.item]=brick
-
+    # Text basic config
     def draw_text(self,x,y,text,size='50'):
         font=('arial', size)
         return self.canvas.create_text(x,y,text=text,font=font)
-
+    # Show the lives at the canvas
     def update_lives_text(self):
         text = 'lives: %s' %self.lives
         if self.hud is None:
             self.hud=self.draw_text(50,20,text,15)
         else:
             self.canvas.itemconfig(self.hud, text=text)
-
+    # start the game
     def start_game(self):
         self.canvas.unbind('<s>')
         self.canvas.delete(self.text)
         self.paddle.ball=None
         self.game_loop()
-
+    # principal game loop
+    # Win and lose conditions
     def game_loop(self):
         self.verify_inter()
         num_bricks=len(self.canvas.find_withtag('brick'))
@@ -187,14 +192,14 @@ class Game(tk.Frame):
         else:
             self.ball.update()
             self.after(50,self.game_loop)
-
+    # Intersect the ball with the paddle
     def verify_inter(self):
         ball_coords=self.ball.position()
         items=self.canvas.find_overlapping(*ball_coords)
         objects=[self.items[x] for x in items if x in self.items]
-
         self.ball.intersect(objects)
 
+# main statement
 if __name__ == '__main__':
     root=tk.Tk()
     root.title('Brick Breaker')
